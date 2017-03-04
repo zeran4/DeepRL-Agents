@@ -16,8 +16,8 @@ def processState(state1):
 def updateTargetGraph(tfVars):
     total_vars = len(tfVars)
     op_holder = []
-    for idx,var in enumerate(tfVars[0:total_vars/2]):
-        op_holder.append(tfVars[idx+total_vars/2].assign(var.value()))
+    for idx,var in enumerate(tfVars[0:total_vars//2]):
+        op_holder.append(tfVars[idx+total_vars//2].assign(var.value()))
     return op_holder
 
 def updateTarget(op_holder,sess):
@@ -25,11 +25,11 @@ def updateTarget(op_holder,sess):
         sess.run(op)
     total_vars = len(tf.trainable_variables())
     a = tf.trainable_variables()[0].eval(session=sess)
-    b = tf.trainable_variables()[total_vars/2].eval(session=sess)
+    b = tf.trainable_variables()[total_vars//2].eval(session=sess)
     if a.all() == b.all():
-        print "Target Set Success"
+        print("Target Set Success")
     else:
-        print "Target Set Failed"
+        print("Target Set Failed")
         
 #Record performance metrics and episode logs for the Control Center.
 def saveToCenter(i,rList,jList,bufferArray,summaryLength,h_size,sess,mainQN,time_per_step):
@@ -46,9 +46,10 @@ def saveToCenter(i,rList,jList,bufferArray,summaryLength,h_size,sess,mainQN,time
         imagesS = np.resize(imagesS,[len(imagesS),84,84,3])
         luminance = np.max(imagesS,3)
         imagesS = np.multiply(np.ones([len(imagesS),84,84,3]),np.reshape(luminance,[len(imagesS),84,84,1]))
-        make_gif(np.ones([len(imagesS),84,84,3]),'./Center/frames/sal'+str(i)+'.gif',duration=len(imagesS)*time_per_step,true_image=False,salience=True,salIMGS=luminance)
+        make_gif(np.ones([len(imagesS),84,84,3]), './Center/frames/sal'+str(i)+'.gif',
+            duration=len(imagesS)*time_per_step, true_image=False, salience=True,salIMGS=luminance)
 
-        images = zip(bufferArray[:,0])
+        images = list(zip(bufferArray[:,0]))
         images.append(bufferArray[-1,3])
         images = np.vstack(images)
         images = np.resize(images,[len(images),84,84,3])
@@ -63,26 +64,27 @@ def saveToCenter(i,rList,jList,bufferArray,summaryLength,h_size,sess,mainQN,time
         wr.writerow(["ACTION","REWARD","A0","A1",'A2','A3','V'])
         a, v = sess.run([mainQN.Advantage,mainQN.Value],\
             feed_dict={mainQN.scalarInput:np.vstack(bufferArray[:,0])/255.0,mainQN.trainLength:len(bufferArray),mainQN.state_in:state_train,mainQN.batch_size:1})
-        wr.writerows(zip(bufferArray[:,1],bufferArray[:,2],a[:,0],a[:,1],a[:,2],a[:,3],v[:,0]))
+        wr.writerows(list(zip(bufferArray[:,1],bufferArray[:,2],a[:,0],a[:,1],a[:,2],a[:,3],v[:,0])))
     
 #This code allows gifs to be saved of the training episode for use in the Control Center.
+# python3 error occured : ValueError: Invalid value for quantizer: 'wu'
 def make_gif(images, fname, duration=2, true_image=False,salience=False,salIMGS=None):
   import moviepy.editor as mpy
   
   def make_frame(t):
     try:
-      x = images[int(len(images)/duration*t)]
+      x = images[int(len(images)//duration*t)]
     except:
       x = images[-1]
 
     if true_image:
       return x.astype(np.uint8)
     else:
-      return ((x+1)/2*255).astype(np.uint8)
+      return ((x+1)//2*255).astype(np.uint8)
   
   def make_mask(t):
     try:
-      x = salIMGS[int(len(salIMGS)/duration*t)]
+      x = salIMGS[int(len(salIMGS)//duration*t)]
     except:
       x = salIMGS[-1]
     return x
@@ -93,7 +95,7 @@ def make_gif(images, fname, duration=2, true_image=False,salience=False,salIMGS=
     clipB = clip.set_mask(mask)
     clipB = clip.set_opacity(0)
     mask = mask.set_opacity(0.1)
-    mask.write_gif(fname, fps = len(images) / duration,verbose=False)
+    mask.write_gif(fname, fps = len(images) // duration,verbose=False)
     #clipB.write_gif(fname, fps = len(images) / duration,verbose=False)
   else:
-    clip.write_gif(fname, fps = len(images) / duration,verbose=False)
+    clip.write_gif(fname, fps = len(images) // duration,verbose=False)
